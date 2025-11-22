@@ -13,32 +13,32 @@ def init_db():
     
     try:
         # Check if admin already exists
-        admin = db.query(User).filter(User.username == "admin").first()
+        admin = db.query(User).filter(User.username == "gurubindo").first()
         if not admin:
             # Create admin user
             admin_user = User(
-                username="admin",
+                username="gurubindo",
                 email="admin@example.com",
                 full_name="Administrator",
-                hashed_password=get_password_hash("admin123"),
+                hashed_password=get_password_hash("rahasiaadmin1"),
                 is_admin=True
             )
             db.add(admin_user)
-            print("✓ Admin user created (username: admin, password: admin123)")
+            print("✓ Admin user created (username: gurubindo, password: rahasiaadmin1)")
         
         # Check if sample student exists
-        student = db.query(User).filter(User.username == "siswa1").first()
+        student = db.query(User).filter(User.username == "siswa_yasmin").first()
         if not student:
             # Create sample student
             student_user = User(
-                username="siswa1",
-                email="siswa1@example.com",
+                username="siswa_yasmin",
+                email="siswa_yasmin@example.com",
                 full_name="Siswa Contoh",
-                hashed_password=get_password_hash("siswa123"),
+                hashed_password=get_password_hash("anaksma10"),
                 is_admin=False
             )
             db.add(student_user)
-            print("✓ Sample student created (username: siswa1, password: siswa123)")
+            print("✓ Sample student created (username: siswa_yasmin, password: anaksma10)")
         
         # Create subjects
         subjects_data = [
