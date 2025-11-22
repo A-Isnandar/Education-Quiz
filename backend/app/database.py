@@ -1,13 +1,16 @@
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-import os
+import os  # PENTING: Tambah ini
 
-# SQLite database
-SQLALCHEMY_DATABASE_URL = "sqlite:///./quiz_platform.db"
+# Ambil URL database dari Environment Variable, default ke SQLite
+SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./quiz_platform.db")
+
+# Cek apakah pake SQLite (butuh argument khusus)
+connect_args = {"check_same_thread": False} if "sqlite" in SQLALCHEMY_DATABASE_URL else {}
 
 engine = create_engine(
-    SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
+    SQLALCHEMY_DATABASE_URL, connect_args=connect_args
 )
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -20,4 +23,3 @@ def get_db():
         yield db
     finally:
         db.close()
-

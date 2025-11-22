@@ -2,23 +2,22 @@ from datetime import datetime, timedelta
 from typing import Optional
 from jose import JWTError, jwt
 import bcrypt
+import os  # PENTING: Tambah ini
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import User
 
-# Secret key for JWT (in production, use environment variable)
-SECRET_KEY = "your-secret-key-change-in-production"
+# GANTI BARIS INI: Ambil dari Environment Variable
+SECRET_KEY = os.getenv("SECRET_KEY", "kunci-rahasia-default-jgn-dipake-di-prod")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """Verify a password against a hash using bcrypt directly"""
     try:
-        # Convert string to bytes if necessary
         if isinstance(plain_password, str):
             plain_password = plain_password.encode('utf-8')
         if isinstance(hashed_password, str):
@@ -29,14 +28,10 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
         return False
 
 def get_password_hash(password: str) -> str:
-    """Hash a password using bcrypt directly"""
-    # Convert to bytes if necessary
     if isinstance(password, str):
         password = password.encode('utf-8')
-    # Generate salt and hash
     salt = bcrypt.gensalt()
     hashed = bcrypt.hashpw(password, salt)
-    # Return as string
     return hashed.decode('utf-8')
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
@@ -87,4 +82,3 @@ async def get_current_admin_user(
             detail="Akses ditolak. Hanya admin yang dapat mengakses."
         )
     return current_user
-
