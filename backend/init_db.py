@@ -13,18 +13,18 @@ def init_db():
     
     try:
         # Check if admin already exists
-        admin = db.query(User).filter(User.username == "gurubindo").first()
+        admin = db.query(User).filter(User.username == "guruyasmin").first()
         if not admin:
             # Create admin user
             admin_user = User(
-                username="gurubindo",
+                username="guruyasmin",
                 email="admin@example.com",
                 full_name="Administrator",
-                hashed_password=get_password_hash("rahasiaadmin1"),
+                hashed_password=get_password_hash("rahasiaadmin24"),
                 is_admin=True
             )
             db.add(admin_user)
-            print("✓ Admin user created (username: gurubindo, password: rahasiaadmin1)")
+            print("✓ Admin user created (username: guruyasmin, password: rahasiaadmin24)")
         
         # Check if sample student exists
         student = db.query(User).filter(User.username == "siswa_yasmin").first()

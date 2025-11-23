@@ -1,40 +1,39 @@
-// frontend/src/pages/QuizGame.jsx
-import { useState, useEffect, useMemo, useCallback } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
-import Layout from '../components/Layout'
-import { api } from '../services/api'
-import { motion, AnimatePresence } from 'framer-motion'
-import MultipleChoiceQuestion from '../components/quiz/MultipleChoiceQuestion'
-import DragDropQuestion from '../components/quiz/DragDropQuestion'
-import FillBlankQuestion from '../components/quiz/FillBlankQuestion'
-import TrueFalseQuestion from '../components/quiz/TrueFalseQuestion'
-import { Award, Flame } from 'lucide-react'
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import Layout from '../components/Layout';
+import { api } from '../services/api';
+import { motion, AnimatePresence } from 'framer-motion';
+import MultipleChoiceQuestion from '../components/quiz/MultipleChoiceQuestion';
+import DragDropQuestion from '../components/quiz/DragDropQuestion';
+import FillBlankQuestion from '../components/quiz/FillBlankQuestion';
+import TrueFalseQuestion from '../components/quiz/TrueFalseQuestion';
+import { Award, Flame } from 'lucide-react';
 
-const QUESTION_TIME = 30 // Waktu per soal (detik)
+const QUESTION_TIME = 30; // Waktu per soal (detik)
 
 export default function QuizGame() {
-  const { subjectId } = useParams()
-  const navigate = useNavigate()
-  const [questions, setQuestions] = useState([])
-  const [currentIndex, setCurrentIndex] = useState(0)
-  const [answers, setAnswers] = useState({})
-  const [submitted, setSubmitted] = useState({})
-  const [score, setScore] = useState(0)
-  const [loading, setLoading] = useState(true)
-  const [showResults, setShowResults] = useState(false)
-  const [levelUp, setLevelUp] = useState(false)
-  const [newLevel, setNewLevel] = useState(null)
-  
-  const [timer, setTimer] = useState(QUESTION_TIME)
-  const [combo, setCombo] = useState(0)
-  const [feedback, setFeedback] = useState(null)
-  const [pointsPopup, setPointsPopup] = useState({ show: false, points: 0 })
+  const { subjectId } = useParams();
+  const navigate = useNavigate();
+  const [questions, setQuestions] = useState([]);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [answers, setAnswers] = useState({});
+  const [submitted, setSubmitted] = useState({});
+  const [score, setScore] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [showResults, setShowResults] = useState(false);
+  const [levelUp, setLevelUp] = useState(false);
+  const [newLevel, setNewLevel] = useState(null);
 
-  const correctSound = useMemo(() => new Audio('/sounds/correct.mp3'), [])
-  const wrongSound = useMemo(() => new Audio('/sounds/wrong.mp3'), [])
-  const clickSound = useMemo(() => new Audio('/sounds/click.mp3'), [])
+  const [timer, setTimer] = useState(QUESTION_TIME);
+  const [combo, setCombo] = useState(0);
+  const [feedback, setFeedback] = useState(null);
+  const [pointsPopup, setPointsPopup] = useState({ show: false, points: 0 });
 
-  const completeSound = useMemo(() => new Audio('/sounds/complete.mp3'), [])
+  const correctSound = useMemo(() => new Audio('/sounds/correct.mp3'), []);
+  const wrongSound = useMemo(() => new Audio('/sounds/wrong.mp3'), []);
+  const clickSound = useMemo(() => new Audio('/sounds/click.mp3'), []);
+
+  const completeSound = useMemo(() => new Audio('/sounds/complete.mp3'), []);
   const bgmSound = useMemo(() => {
     const audio = new Audio('/sounds/bgm.mp3');
     audio.loop = true;
@@ -43,50 +42,58 @@ export default function QuizGame() {
   }, []);
 
   useEffect(() => {
-    loadQuestions()
-  }, [subjectId])
+    loadQuestions();
+  }, [subjectId]);
 
   useEffect(() => {
-    setTimer(QUESTION_TIME) 
-  }, [currentIndex])
+    setTimer(QUESTION_TIME);
+  }, [currentIndex]);
 
   const handleNext = useCallback(() => {
     if (currentIndex < questions.length - 1) {
-      setCurrentIndex(currentIndex + 1)
+      setCurrentIndex(currentIndex + 1);
     } else {
-      setShowResults(true)
+      setShowResults(true);
     }
-  }, [currentIndex, questions.length])
+  }, [currentIndex, questions.length]);
 
   useEffect(() => {
-    if (loading || questions.length === 0 || showResults) return
+    if (loading || questions.length === 0 || showResults) return;
 
-    const currentQuestion = questions[currentIndex]
-    if (!currentQuestion) return 
-    
-    const isSubmitted = submitted[currentQuestion.id]
+    const currentQuestion = questions[currentIndex];
+    if (!currentQuestion) return;
 
-    if (isSubmitted) return
-    
+    const isSubmitted = submitted[currentQuestion.id];
+
+    if (isSubmitted) return;
+
     if (timer <= 0) {
-      handleNext()
-      return
+      handleNext();
+      return;
     }
 
     const interval = setInterval(() => {
-      setTimer((t) => t - 1)
-    }, 1000)
+      setTimer((t) => t - 1);
+    }, 1000);
 
-    return () => clearInterval(interval)
-  }, [timer, submitted, showResults, loading, currentIndex, questions, handleNext])
+    return () => clearInterval(interval);
+  }, [
+    timer,
+    submitted,
+    showResults,
+    loading,
+    currentIndex,
+    questions,
+    handleNext,
+  ]);
 
   useEffect(() => {
     if (!loading && questions.length > 0 && !showResults) {
-      bgmSound.play().catch(e => {
-        console.warn("BGM butuh interaksi user buat main.", e)
+      bgmSound.play().catch((e) => {
+        console.warn('BGM butuh interaksi user buat main.', e);
       });
     }
-    
+
     // Cleanup: stop BGM kalo kuis selesai atau pindah halaman
     return () => {
       bgmSound.pause();
@@ -96,82 +103,96 @@ export default function QuizGame() {
 
   useEffect(() => {
     if (showResults) {
-      completeSound.play().catch(e => console.error("Error playing complete sound", e));
+      completeSound
+        .play()
+        .catch((e) => console.error('Error playing complete sound', e));
     }
   }, [showResults, completeSound]);
   // --- END ---
 
   const loadQuestions = async () => {
     try {
-      const response = await api.getQuestionsBySubject(subjectId)
-      setQuestions(response.data)
+      const response = await api.getQuestionsBySubject(subjectId);
+      setQuestions(response.data);
     } catch (error) {
-      console.error('Error loading questions:', error)
+      console.error('Error loading questions:', error);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const handleAnswer = (questionId, answer) => {
-    clickSound.play().catch(e => console.error("Error playing sound", e)) 
-    setAnswers({ ...answers, [questionId]: answer })
-  }
+    clickSound.play().catch((e) => console.error('Error playing sound', e));
+    setAnswers({ ...answers, [questionId]: answer });
+  };
 
   const handleSubmit = async () => {
-    const currentQuestion = questions[currentIndex]
+    const currentQuestion = questions[currentIndex];
     if (!answers[currentQuestion.id]) {
-      alert('Silakan pilih jawaban terlebih dahulu')
-      return
+      alert('Silakan pilih jawaban terlebih dahulu');
+      return;
     }
 
     try {
       const response = await api.submitAnswer({
         question_id: currentQuestion.id,
         answer: answers[currentQuestion.id],
-      })
+      });
 
-      setSubmitted({ ...submitted, [currentQuestion.id]: response.data })
-      
+      setSubmitted({ ...submitted, [currentQuestion.id]: response.data });
+
       if (response.data.is_correct) {
-        const points = response.data.points_earned
-        setScore(score + points)
-        setCombo(c => c + 1)
-        setFeedback('correct')
-        correctSound.play().catch(e => console.error("Error playing sound", e))
-        setPointsPopup({ show: true, points: points })
+        const points = response.data.points_earned;
+        setScore(score + points);
+        setCombo((c) => c + 1);
+        setFeedback('correct');
+        correctSound
+          .play()
+          .catch((e) => console.error('Error playing sound', e));
+        setPointsPopup({ show: true, points: points });
       } else {
-        setCombo(0)
-        setFeedback('wrong')
-        wrongSound.play().catch(e => console.error("Error playing sound", e))
+        setCombo(0);
+        setFeedback('wrong');
+        wrongSound.play().catch((e) => console.error('Error playing sound', e));
       }
-      
-      setTimeout(() => setFeedback(null), 500)
-      setTimeout(() => setPointsPopup({ show: false, points: 0 }), 1500)
+
+      setTimeout(() => setFeedback(null), 500);
+      setTimeout(() => setPointsPopup({ show: false, points: 0 }), 1500);
 
       if (response.data.level_up) {
-        setLevelUp(true)
-        setNewLevel(response.data.new_level)
+        setLevelUp(true);
+        setNewLevel(response.data.new_level);
       }
     } catch (error) {
-      console.error('Error submitting answer:', error)
-      alert('Terjadi kesalahan saat mengirim jawaban')
+      console.error('Error submitting answer:', error);
+      alert('Terjadi kesalahan saat mengirim jawaban');
     }
-  }
-  
+  };
+
   const handlePrevious = () => {
     if (currentIndex > 0) {
-      setCurrentIndex(currentIndex - 1)
+      setCurrentIndex(currentIndex - 1);
     }
-  }
+  };
+
+  // --- FUNGSI SENSOR (SATU-SATUNYA TAMBAHAN BARU) ---
+  const renderQuestionText = (text, type) => {
+    if (type === 'fill_blank') {
+      return text.replace(/\{[^}]+\}/g, '_______');
+    }
+    return text;
+  };
 
   if (loading) {
     return (
       <Layout>
         <div className="text-center py-12">
-          <div className="text-xl text-gray-700 animate-pulse">Memuat pertanyaan...</div>
+          <div className="text-xl text-gray-700 animate-pulse">
+            Memuat pertanyaan...
+          </div>
         </div>
       </Layout>
-    )
+    );
   }
 
   if (questions.length === 0) {
@@ -189,17 +210,17 @@ export default function QuizGame() {
           </button>
         </div>
       </Layout>
-    )
+    );
   }
 
   if (showResults) {
     const totalPoints = Object.values(submitted).reduce(
       (sum, sub) => sum + (sub.points_earned || 0),
       0
-    )
+    );
     const correctCount = Object.values(submitted).filter(
       (sub) => sub.is_correct
-    ).length
+    ).length;
 
     return (
       <Layout>
@@ -233,7 +254,10 @@ export default function QuizGame() {
             <div className="text-xl">
               <span className="font-semibold">Akurasi: </span>
               <span className="text-purple-600">
-                {questions.length > 0 ? ((correctCount / questions.length) * 100).toFixed(1) : 0}%
+                {questions.length > 0
+                  ? ((correctCount / questions.length) * 100).toFixed(1)
+                  : 0}
+                %
               </span>
             </div>
           </div>
@@ -253,12 +277,12 @@ export default function QuizGame() {
           </div>
         </motion.div>
       </Layout>
-    )
+    );
   }
 
-  const currentQuestion = questions[currentIndex]
-  const isSubmitted = submitted[currentQuestion.id]
-  const timerPercentage = (timer / QUESTION_TIME) * 100
+  const currentQuestion = questions[currentIndex];
+  const isSubmitted = submitted[currentQuestion.id];
+  const timerPercentage = (timer / QUESTION_TIME) * 100;
 
   return (
     <Layout>
@@ -304,7 +328,11 @@ export default function QuizGame() {
               animate={{ width: `${timerPercentage}%` }}
               transition={{ duration: 1, ease: 'linear' }}
               className={`h-full rounded-full ${
-                timerPercentage > 50 ? 'bg-green-500' : timerPercentage > 20 ? 'bg-yellow-500' : 'bg-red-500'
+                timerPercentage > 50
+                  ? 'bg-green-500'
+                  : timerPercentage > 20
+                  ? 'bg-yellow-500'
+                  : 'bg-red-500'
               }`}
             />
           </div>
@@ -318,7 +346,6 @@ export default function QuizGame() {
             exit={{ opacity: 0, x: -50 }}
             className="bg-white rounded-xl shadow-lg p-8 mb-6 relative"
           >
-            
             <AnimatePresence>
               {pointsPopup.show && (
                 <motion.div
@@ -344,10 +371,14 @@ export default function QuizGame() {
                   : 'Isian'}
               </div>
               <h2 className="text-2xl font-bold text-gray-800 mb-4">
-                {currentQuestion.question_text}
+                {/* INI BAGIAN YANG DIGANTI */}
+                {renderQuestionText(
+                  currentQuestion.question_text,
+                  currentQuestion.question_type
+                )}
               </h2>
             </div>
-            
+
             {currentQuestion.question_type === 'multiple_choice' && (
               <MultipleChoiceQuestion
                 question={currentQuestion}
@@ -397,10 +428,10 @@ export default function QuizGame() {
                 <p className="text-gray-700">{currentQuestion.explanation}</p>
               </motion.div>
             )}
-
           </motion.div>
         </AnimatePresence>
 
+        {/* Level Up & Button tetap sama */}
         <AnimatePresence>
           {levelUp && (
             <motion.div
@@ -447,5 +478,5 @@ export default function QuizGame() {
         </div>
       </div>
     </Layout>
-  )
+  );
 }

@@ -106,11 +106,16 @@ def check_answer(question: Question, user_answer: dict) -> bool:
         correct_order = correct_answer.get("order", [])
         return user_order == correct_order
     elif question.question_type == "fill_blank":
-        # For fill in the blank, compare the filled values
+        # For fill in the blank, compare the filled values (CASE INSENSITIVE)
         user_fills = user_answer.get("fills", {})
         correct_fills = correct_answer.get("fills", {})
-        return user_fills == correct_fills
-    elif question.question_type == "true_false":
+        
+        # Normalisasi jawaban
+        user_norm = {k: str(v).lower().strip() for k, v in user_fills.items()}
+        correct_norm = {k: str(v).lower().strip() for k, v in correct_fills.items()}
+        
+        return user_norm == correct_norm
+    elif question.question_type == "true_false": 
         # For true/false, compare the boolean value
         user_answer_value = user_answer.get("answer")
         correct_answer_value = correct_answer.get("answer")

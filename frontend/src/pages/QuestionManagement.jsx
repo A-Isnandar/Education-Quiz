@@ -9,6 +9,10 @@ export default function QuestionManagement() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState(null);
+
+  // STATE BARU: Buat nampung teks JSON mentah biar bisa diketik bebas
+  const [jsonInput, setJsonInput] = useState('{}');
+
   const [formData, setFormData] = useState({
     subject_id: '',
     question_type: 'multiple_choice',
@@ -44,6 +48,7 @@ export default function QuestionManagement() {
       let initialOptions = ['', '', '', ''];
       let initialCorrectAnswer = question.correct_answer;
 
+      // LOGIC INIT DATA
       if (question.question_type === 'multiple_choice') {
         initialOptions = question.options || ['', '', '', ''];
         initialCorrectAnswer = question.correct_answer || { selected: 0 };
@@ -53,6 +58,8 @@ export default function QuestionManagement() {
       } else if (question.question_type === 'fill_blank') {
         initialOptions = null;
         initialCorrectAnswer = question.correct_answer || { fills: {} };
+        // ISI JSON INPUT DENGAN DATA YANG ADA
+        setJsonInput(JSON.stringify(initialCorrectAnswer.fills || {}));
       } else if (question.question_type === 'true_false') {
         initialOptions = null;
         initialCorrectAnswer = question.correct_answer || { answer: true };
@@ -69,6 +76,7 @@ export default function QuestionManagement() {
       });
     } else {
       setEditingQuestion(null);
+      setJsonInput('{}'); // Reset JSON input kalau mode tambah baru
       setFormData({
         subject_id: '',
         question_type: 'multiple_choice',
@@ -91,19 +99,34 @@ export default function QuestionManagement() {
     e.preventDefault();
 
     try {
-      const data = {
-        ...formData,
-        options:
+      // CLONE data dulu
+      let submitData = { ...formData };
+
+      // KHUSUS ISIAN: Validasi JSON manual pas tombol Save ditekan
+      if (formData.question_type === 'fill_blank') {
+        try {
+          const parsedFills = JSON.parse(jsonInput);
+          submitData.correct_answer = { fills: parsedFills };
+          submitData.options = null;
+        } catch (err) {
+          alert(
+            'Format JSON untuk jawaban Isian TIDAK VALID! Pastikan formatnya {"kata": "kata"}'
+          );
+          return; // Stop proses kalau JSON error
+        }
+      } else {
+        // Tipe lain
+        submitData.options =
           formData.question_type === 'multiple_choice' ||
           formData.question_type === 'drag_drop'
             ? formData.options
-            : null,
-      };
+            : null;
+      }
 
       if (editingQuestion) {
-        await api.updateQuestion(editingQuestion.id, data);
+        await api.updateQuestion(editingQuestion.id, submitData);
       } else {
-        await api.createQuestion(data);
+        await api.createQuestion(submitData);
       }
 
       await loadData();
@@ -151,7 +174,7 @@ export default function QuestionManagement() {
           <h1 className="text-3xl font-bold text-gray-800 mb-2">
             Kelola Pertanyaan
           </h1>
-          <p className="text-gray-600">Buat, edit, dan hapus pertanyaan</p>
+          <p className="text-gray-600">Buat, edit, dan hapus pertanyaan kuis</p>
         </div>
         <button
           onClick={() => handleOpenModal()}
@@ -166,7 +189,7 @@ export default function QuestionManagement() {
           <thead className="bg-gray-50">
             <tr>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                ID
+                No
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                 Pertanyaan
@@ -183,42 +206,47 @@ export default function QuestionManagement() {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
-            {questions.map((question) => (
-              <tr key={question.id} className="hover:bg-gray-50">
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  {question.id}
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-900 max-w-md truncate">
-                  {question.question_text}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {question.question_type === 'multiple_choice'
-                    ? 'Pilihan Ganda'
-                    : question.question_type === 'drag_drop'
-                    ? 'Drag & Drop'
-                    : question.question_type === 'true_false'
-                    ? 'Benar/Salah'
-                    : 'Isian'}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {question.points}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                  <button
-                    onClick={() => handleOpenModal(question)}
-                    className="text-blue-600 hover:text-blue-900"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => handleDelete(question.id)}
-                    className="text-red-600 hover:text-red-900"
-                  >
-                    Hapus
-                  </button>
-                </td>
-              </tr>
-            ))}
+            {questions.map(
+              (
+                question,
+                index // Perhatikan ada 'index' di sini
+              ) => (
+                <tr key={question.id} className="hover:bg-gray-50">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {index + 1} {/* Ganti question.id jadi index + 1 */}
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-900 max-w-md truncate">
+                    {question.question_text}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {question.question_type === 'multiple_choice'
+                      ? 'Pilihan Ganda'
+                      : question.question_type === 'drag_drop'
+                      ? 'Drag & Drop'
+                      : question.question_type === 'true_false'
+                      ? 'Benar/Salah'
+                      : 'Isian'}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {question.points}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
+                    <button
+                      onClick={() => handleOpenModal(question)}
+                      className="text-blue-600 hover:text-blue-900"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => handleDelete(question.id)}
+                      className="text-red-600 hover:text-red-900"
+                    >
+                      Hapus
+                    </button>
+                  </td>
+                </tr>
+              )
+            )}
           </tbody>
         </table>
       </div>
@@ -288,6 +316,7 @@ export default function QuestionManagement() {
                       } else if (newType === 'fill_blank') {
                         newFormData.correct_answer = { fills: {} };
                         newFormData.options = null;
+                        setJsonInput('{}'); // Reset json input
                       } else if (newType === 'true_false') {
                         newFormData.correct_answer = { answer: true };
                         newFormData.options = null;
@@ -392,20 +421,9 @@ export default function QuestionManagement() {
                       {"{blank1: 'jawaban1', blank2: 'jawaban2'}"})
                     </label>
                     <textarea
-                      value={JSON.stringify(
-                        formData.correct_answer.fills || {}
-                      )}
-                      onChange={(e) => {
-                        try {
-                          const fills = JSON.parse(e.target.value);
-                          setFormData({
-                            ...formData,
-                            correct_answer: { fills },
-                          });
-                        } catch (err) {
-                          // Invalid JSON, ignore
-                        }
-                      }}
+                      // DISINI PERUBAHANNYA: PAKE STATE TEXT BIASA
+                      value={jsonInput}
+                      onChange={(e) => setJsonInput(e.target.value)}
                       required
                       rows={3}
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"

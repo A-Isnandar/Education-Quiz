@@ -18,7 +18,10 @@ def get_questions(
     query = db.query(Question)
     if subject_id:
         query = query.filter(Question.subject_id == subject_id)
-    questions = query.all()
+    
+    # order_by(Question.id) biar urut 1, 2, 3...
+    questions = query.order_by(Question.id).all()
+    
     return questions
 
 @router.get("/{question_id}", response_model=QuestionResponse)
